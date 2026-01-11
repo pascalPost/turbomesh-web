@@ -21,3 +21,7 @@ Thumbs.db
 # Vite
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# turbomesh-sdk
+static/turbomesh.wasm
+src/lib/turbomesh.ts

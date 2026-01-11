@@ -1,3 +1,9 @@
+# turbomesh web app
+
+## Build
+
+Install `turbomesh.wasm` into `./static/turbomesh.wasm` and `turbomesh.ts` into `./src/lib/turbomesh.ts`.
+
 # sv
 
 Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
