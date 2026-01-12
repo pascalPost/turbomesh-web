@@ -2,9 +2,10 @@
 	import loader from '@monaco-editor/loader';
 	import { onMount, onDestroy } from 'svelte';
 	import type * as Monaco from 'monaco-editor/esm/vs/editor/editor.api.d.ts';
+	import { mode } from 'mode-watcher';
 
-	let editor: Monaco.editor.IStandaloneCodeEditor;
-	let monaco: typeof Monaco;
+	let editor: Monaco.editor.IStandaloneCodeEditor | undefined;
+	let monaco: typeof Monaco | undefined;
 	let container: HTMLElement;
 
 	onMount(async () => {
@@ -13,16 +14,21 @@
 
 		monaco = await loader.init();
 
-		editor = monaco.editor.create(container, {
+		editor = monaco?.editor.create(container, {
 			value: '',
 			language: 'json',
-			// theme: 'vs-dark',
+			theme: mode.current === 'dark' ? 'vs-dark' : 'vs',
 			minimap: { enabled: false },
 			automaticLayout: true,
-			// fontFamily: "'JetBrains Mono', 'Fira Code', 'SFMono-Regular', Menlo, monospace",
 			fontLigatures: true,
 			scrollBeyondLastLine: false
 		});
+	});
+
+	$effect(() => {
+		const m = mode.current;
+		if (m === undefined || !monaco) return;
+		monaco.editor.setTheme(m === 'dark' ? 'vs-dark' : 'vs');
 	});
 
 	onDestroy(() => {
