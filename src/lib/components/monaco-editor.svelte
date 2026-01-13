@@ -24,6 +24,8 @@
 			scrollBeyondLastLine: false,
 			fontFamily: 'Geist Mono'
 		});
+
+		await reset();
 	});
 
 	$effect(() => {
@@ -35,6 +37,18 @@
 	onDestroy(() => {
 		editor?.dispose();
 	});
+
+	export async function reset() {
+		try {
+			const response = await fetch('/T106.json');
+			if (!response.ok) throw new Error(`Failed to load T106.json (${response.status})`);
+
+			const text = await response.text();
+			editor?.setValue(text);
+		} catch (error) {
+			console.error('Failed to load initial template', error);
+		}
+	}
 </script>
 
 <div class="container" bind:this={container} aria-label="Code Editor"></div>
