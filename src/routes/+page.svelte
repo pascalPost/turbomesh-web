@@ -11,15 +11,27 @@
 
 	let monacoEditor: MonacoEditor | null = null;
 
-	let turbomesh: Turbomesh.TurboMeshSDK | null = null;
+	let turbomesh_sdk: Turbomesh.TurboMeshSDK | null = null;
+
+	// TODO: replace with handle to mesh
+	let blockCount: number = 0;
 
 	onMount(async () => {
-		turbomesh = await Turbomesh.TurboMeshSDK.load({ wasmUrl: 'turbomesh.wasm', autoInit: false });
+		turbomesh_sdk = await Turbomesh.TurboMeshSDK.load({
+			wasmUrl: 'turbomesh.wasm',
+			autoInit: false
+		});
 	});
 
 	onDestroy(() => {
-		turbomesh?.free();
+		turbomesh_sdk?.free();
 	});
+
+	function generateGrid() {
+		if (!turbomesh_sdk) return;
+		turbomesh_sdk.run();
+		blockCount = turbomesh_sdk.blocksCount();
+	}
 </script>
 
 <div class="flex h-screen flex-col pb-1 [--header-height:calc(--spacing(14))]">
@@ -29,17 +41,20 @@
 			<div class="flex h-full flex-col gap-2">
 				<MonacoEditor bind:this={monacoEditor} />
 				<div class="flex flex-wrap gap-2">
-					<Button class="min-w-48 flex-1" onclick={() => turbomesh?.run()}
-						><Play />Generate Grid</Button
-					>
+					<Button class="min-w-48 flex-1" onclick={generateGrid}><Play />Generate Grid</Button>
 					<Button class="min-w-48 flex-1" onclick={monacoEditor?.reset}><RotateCcw />Reset</Button>
 				</div>
 			</div>
 		</Resizable.Pane>
 		<Resizable.Handle withHandle />
 		<Resizable.Pane>
-			<div class="h-full">
+			<div class="flex h-full flex-col gap-1">
 				<RenderView />
+				<div class="flex h-10 items-center justify-end border-t pr-2">
+					<div>
+						blocks: {blockCount}
+					</div>
+				</div>
 			</div>
 		</Resizable.Pane>
 	</Resizable.PaneGroup>

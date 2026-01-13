@@ -1,5 +1,10 @@
 <script lang="ts">
-	import { Canvas } from '@threlte/core';
+	import { Canvas, T } from '@threlte/core';
 </script>
 
-<Canvas></Canvas>
+<Canvas>
+	<T.Mesh>
+		<T.BoxGeometry />
+		<T.MeshBasicMaterial />
+	</T.Mesh>
+</Canvas>
