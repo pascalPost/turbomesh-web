@@ -3,7 +3,7 @@
 	import Button from '$lib/components/ui/button/button.svelte';
 	import SiteHeader from '$lib/components/site-header.svelte';
 	import Play from '@lucide/svelte/icons/play';
-	import * as Turbomesh from '$lib/turbomesh';
+	import * as TurboMesh from '$lib/turbomesh';
 	import RotateCcw from '@lucide/svelte/icons/rotate-ccw';
 	import MonacoEditor from '$lib/components/monaco-editor.svelte';
 	import RenderView from '$lib/components/render-view.svelte';
@@ -11,13 +11,12 @@
 
 	let monacoEditor: MonacoEditor | null = null;
 
-	let turbomesh_sdk: Turbomesh.TurboMeshSDK | null = null;
+	let turbomesh_sdk: TurboMesh.TurboMeshSDK | null = null;
 
-	// TODO: replace with handle to mesh
-	let blockCount: number = 0;
+	let blockPoints: TurboMesh.BlockPoints[] = [];
 
 	onMount(async () => {
-		turbomesh_sdk = await Turbomesh.TurboMeshSDK.load({
+		turbomesh_sdk = await TurboMesh.TurboMeshSDK.load({
 			wasmUrl: 'turbomesh.wasm',
 			autoInit: false
 		});
@@ -28,9 +27,11 @@
 	});
 
 	function generateGrid() {
-		if (!turbomesh_sdk) return;
-		turbomesh_sdk.run();
-		blockCount = turbomesh_sdk.blocksCount();
+		const sdk = turbomesh_sdk;
+		if (!sdk) return;
+		sdk.run();
+		const count = sdk.blocksCount();
+		blockPoints = Array.from({ length: count }, (_, i) => sdk.blockPointsView(i));
 	}
 </script>
 
@@ -52,7 +53,7 @@
 				<RenderView />
 				<div class="flex h-10 items-center justify-end border-t pr-2">
 					<div>
-						blocks: {blockCount}
+						blocks: {blockPoints.length}
 					</div>
 				</div>
 			</div>
