@@ -21,7 +21,8 @@
 			minimap: { enabled: false },
 			automaticLayout: true,
 			fontLigatures: true,
-			scrollBeyondLastLine: false
+			scrollBeyondLastLine: false,
+			fontFamily: 'Geist Mono'
 		});
 	});
 

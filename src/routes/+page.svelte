@@ -14,7 +14,6 @@
 			variant="floating"
 			class=" top-(--header-height) h-[calc(100svh-var(--header-height))]!"
 		>
-			<!-- <MonacoEditor language="json" /> -->
 			<Sidebar.Content>
 				<MonacoEditor />
 			</Sidebar.Content>
