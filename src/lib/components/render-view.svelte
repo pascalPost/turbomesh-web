@@ -1,7 +1,8 @@
 <script lang="ts">
+	import type { ComponentProps } from 'svelte';
 	import { Canvas, T } from '@threlte/core';
 	import { OrbitControls } from '@threlte/extras';
-	import { BufferGeometry, MOUSE } from 'three';
+	import * as three from 'three';
 
 	// Your 2D points (x,y)
 	const pts: Array<[number, number]> = [
@@ -17,30 +18,45 @@
 		positions[i * 3 + 1] = y;
 		positions[i * 3 + 2] = 0;
 	});
+
+	const initialPosition: [number, number, number] = [0, 0, 10];
+	const initialZoom = 100;
+
+	let camera: three.OrthographicCamera | undefined = undefined;
+	let controls: ComponentProps<typeof OrbitControls>['ref'] | undefined = undefined;
+
+	export function reset() {
+		if (!camera || !controls) return;
+		console.log('Resetting camera position');
+		camera.position.set(...initialPosition);
+		camera.zoom = initialZoom;
+		camera.updateProjectionMatrix();
+		controls.reset();
+	}
 </script>
 
 <Canvas>
-	<T.OrthographicCamera makeDefault position={[0, 0, 10]} zoom={100}>
+	<T.OrthographicCamera makeDefault position={initialPosition} zoom={initialZoom} bind:ref={camera}>
 		<OrbitControls
 			enableRotate={false}
 			enableDamping={false}
 			zoomToCursor={true}
 			mouseButtons={{
-				LEFT: MOUSE.PAN,
-				MIDDLE: MOUSE.DOLLY,
-				RIGHT: MOUSE.PAN
+				LEFT: three.MOUSE.PAN,
+				MIDDLE: three.MOUSE.DOLLY,
+				RIGHT: three.MOUSE.PAN
 			}}
 			minZoom={5}
 			maxZoom={500}
+			bind:ref={controls}
 		/>
 	</T.OrthographicCamera>
 	<T.Points>
 		<T.BufferGeometry>
-			<!-- attach the BufferAttribute as the geometry's "position" attribute -->
 			<T.BufferAttribute
 				args={[positions, 3]}
 				attach={({ parent, ref }) => {
-					(parent as BufferGeometry).setAttribute('position', ref);
+					(parent as three.BufferGeometry).setAttribute('position', ref);
 				}}
 			/>
 		</T.BufferGeometry>

@@ -33,6 +33,8 @@
 		const count = sdk.blocksCount();
 		blockPoints = Array.from({ length: count }, (_, i) => sdk.blockPointsView(i));
 	}
+
+	let renderView: RenderView;
 </script>
 
 <div class="flex h-screen flex-col pb-1 [--header-height:calc(--spacing(14))]">
@@ -50,7 +52,10 @@
 		<Resizable.Handle withHandle />
 		<Resizable.Pane>
 			<div class="flex h-full flex-col gap-1">
-				<RenderView />
+				<RenderView bind:this={renderView} />
+				<Button onclick={() => renderView.reset()}>
+					<RotateCcw /> Reset View
+				</Button>
 				<div class="flex h-10 items-center justify-end border-t pr-2">
 					<div>
 						blocks: {blockPoints.length}
