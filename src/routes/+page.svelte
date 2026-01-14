@@ -9,7 +9,7 @@
 	import RotateCcw from '@lucide/svelte/icons/rotate-ccw';
 	import MonacoEditor from '$lib/components/monaco-editor.svelte';
 	import RenderView from '$lib/components/render-view.svelte';
-	import { onDestroy, onMount } from 'svelte';
+	import { onDestroy, onMount, tick } from 'svelte';
 
 	let monacoEditor: MonacoEditor | null = $state(null);
 
@@ -17,6 +17,7 @@
 	let logEntries = $state<string[]>([]);
 	let workerReady = $state(false);
 	let worker: Worker | null = null;
+	let logPane: HTMLDivElement | null = $state(null);
 
 	type WorkerMessage =
 		| { type: 'ready' }
@@ -48,6 +49,17 @@
 	function appendLog(message: string) {
 		logEntries = [...logEntries, `[${new Date().toISOString()}] ${message}`];
 	}
+
+	$effect(() => {
+		if (!logPane || logEntries.length === 0) {
+			return;
+		}
+		void tick().then(() => {
+			if (logPane) {
+				logPane.scrollTop = logPane.scrollHeight;
+			}
+		});
+	});
 
 	function handleWorkerMessage(event: MessageEvent<WorkerMessage>) {
 		const data = event.data;
@@ -118,7 +130,10 @@
 							<span>Log</span>
 							<span>{logEntries.length}</span>
 						</div>
-						<div class="flex-1 min-h-0 overflow-auto overflow-x-auto px-2 py-1 font-mono text-xs whitespace-pre">
+						<div
+							class="flex-1 min-h-0 overflow-auto overflow-x-auto px-2 py-1 font-mono text-xs whitespace-pre"
+							bind:this={logPane}
+						>
 							{#if logEntries.length === 0}
 								<div class="text-muted-foreground">No log entries yet.</div>
 							{:else}
