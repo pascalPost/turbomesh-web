@@ -3,27 +3,33 @@
 	import { Canvas, T } from '@threlte/core';
 	import { OrbitControls } from '@threlte/extras';
 	import * as three from 'three';
+	import type { BlockPoints } from '$lib/turbomesh';
 
-	// Your 2D points (x,y)
-	const pts: Array<[number, number]> = [
-		[0, 0],
-		[1, 2],
-		[2, 1],
-		[-1, 1]
-	];
+	const { blocks = [] } = $props<{ blocks?: BlockPoints[] }>();
+	const positions = $derived(blocks.length ? toPosition(blocks) : new Float32Array());
 
-	const positions = new Float32Array(pts.length * 3);
-	pts.forEach(([x, y], i) => {
-		positions[i * 3 + 0] = x;
-		positions[i * 3 + 1] = y;
-		positions[i * 3 + 2] = 0;
-	});
+	function toPosition(blocks: BlockPoints[]) {
+		const totalPoints = blocks.reduce((sum, block) => sum + block.size.i * block.size.j, 0);
+		const pos = new Float32Array(totalPoints * 3);
+
+		let offset = 0;
+		for (const block of blocks) {
+			const data = block.values;
+			for (let i = 0; i < data.length; i += 2) {
+				pos[offset++] = data[i];
+				pos[offset++] = data[i + 1];
+				pos[offset++] = 0;
+			}
+		}
+
+		return pos;
+	}
 
 	const initialPosition: [number, number, number] = [0, 0, 10];
 	const initialZoom = 100;
 
-	let camera: three.OrthographicCamera | undefined = undefined;
-	let controls: ComponentProps<typeof OrbitControls>['ref'] | undefined = undefined;
+	let camera: three.OrthographicCamera | undefined = $state(undefined);
+	let controls: ComponentProps<typeof OrbitControls>['ref'] | undefined = $state(undefined);
 
 	export function reset() {
 		if (!camera || !controls) return;

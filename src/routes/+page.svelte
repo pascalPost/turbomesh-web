@@ -9,11 +9,11 @@
 	import RenderView from '$lib/components/render-view.svelte';
 	import { onDestroy, onMount } from 'svelte';
 
-	let monacoEditor: MonacoEditor | null = null;
+	let monacoEditor: MonacoEditor | null = $state(null);
 
 	let turbomesh_sdk: TurboMesh.TurboMeshSDK | null = null;
 
-	let blockPoints: TurboMesh.BlockPoints[] = [];
+	let blockPoints = $state<TurboMesh.BlockPoints[]>([]);
 
 	onMount(async () => {
 		turbomesh_sdk = await TurboMesh.TurboMeshSDK.load({
@@ -52,7 +52,7 @@
 		<Resizable.Handle withHandle />
 		<Resizable.Pane>
 			<div class="flex h-full flex-col gap-1">
-				<RenderView bind:this={renderView} />
+				<RenderView bind:this={renderView} blocks={blockPoints} />
 				<Button class="mr-1 self-end" onclick={() => renderView.reset()}>
 					<RotateCcw /> Reset View
 				</Button>
