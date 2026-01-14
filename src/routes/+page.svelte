@@ -53,7 +53,7 @@
 		<Resizable.Pane>
 			<div class="flex h-full flex-col gap-1">
 				<RenderView bind:this={renderView} />
-				<Button onclick={() => renderView.reset()}>
+				<Button class="mr-1 self-end" onclick={() => renderView.reset()}>
 					<RotateCcw /> Reset View
 				</Button>
 				<div class="flex h-10 items-center justify-end border-t pr-2">
