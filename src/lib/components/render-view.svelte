@@ -6,9 +6,68 @@
 	import type { BlockPoints } from '$lib/turbomesh';
 
 	const { blocks = [] } = $props<{ blocks?: BlockPoints[] }>();
+
+	const initialPosition: [number, number, number] = [0, 0, 10];
+	const initialZoom = 100;
+	const minZoom = 5;
+	const maxZoom = 500;
+
+	let camera = $state<three.OrthographicCamera | undefined>(undefined);
+	let controls: ComponentProps<typeof OrbitControls>['ref'] | undefined = $state(undefined);
+
 	const positions = $derived(blocks.length ? toPosition(blocks) : new Float32Array());
 
-	function toPosition(blocks: BlockPoints[]) {
+	// compute bounds/center/zoom
+	const fit = $derived.by(() => {
+		if (!camera || positions.length < 3) return null;
+		const cam = camera;
+		let minX = positions[0],
+			maxX = positions[0];
+		let minY = positions[1],
+			maxY = positions[1];
+
+		for (let i = 0; i < positions.length; i += 3) {
+			const x = positions[i];
+			const y = positions[i + 1];
+			if (x < minX) minX = x;
+			if (x > maxX) maxX = x;
+			if (y < minY) minY = y;
+			if (y > maxY) maxY = y;
+		}
+
+		const centerX = (minX + maxX) / 2;
+		const centerY = (minY + maxY) / 2;
+
+		const width = Math.max(maxX - minX, 1e-6);
+		const height = Math.max(maxY - minY, 1e-6);
+		const viewWidth = cam.right - cam.left;
+		const viewHeight = cam.top - cam.bottom;
+		const padding = 1.1;
+
+		const zoom = Math.min(viewWidth / (width * padding), viewHeight / (height * padding));
+
+		return { minX, maxX, minY, maxY, centerX, centerY, zoom };
+	});
+
+	$effect(() => {
+		if (!camera || !controls || !fit) return;
+		controls.target.set(fit.centerX, fit.centerY, 0);
+		camera.position.set(fit.centerX, fit.centerY, camera.position.z);
+		camera.zoom = three.MathUtils.clamp(fit.zoom, minZoom, maxZoom);
+		camera.updateProjectionMatrix();
+		controls.update();
+	});
+
+	export function reset() {
+		if (!camera || !controls) return;
+		console.log('Resetting camera position');
+		camera.position.set(...initialPosition);
+		camera.zoom = initialZoom;
+		camera.updateProjectionMatrix();
+		controls.reset();
+	}
+
+	function toPosition(blocks: BlockPoints[]): Float32Array {
 		const totalPoints = blocks.reduce((sum, block) => sum + block.size.i * block.size.j, 0);
 		const pos = new Float32Array(totalPoints * 3);
 
@@ -24,21 +83,6 @@
 
 		return pos;
 	}
-
-	const initialPosition: [number, number, number] = [0, 0, 10];
-	const initialZoom = 100;
-
-	let camera: three.OrthographicCamera | undefined = $state(undefined);
-	let controls: ComponentProps<typeof OrbitControls>['ref'] | undefined = $state(undefined);
-
-	export function reset() {
-		if (!camera || !controls) return;
-		console.log('Resetting camera position');
-		camera.position.set(...initialPosition);
-		camera.zoom = initialZoom;
-		camera.updateProjectionMatrix();
-		controls.reset();
-	}
 </script>
 
 <Canvas>
@@ -52,8 +96,6 @@
 				MIDDLE: three.MOUSE.DOLLY,
 				RIGHT: three.MOUSE.PAN
 			}}
-			minZoom={5}
-			maxZoom={500}
 			bind:ref={controls}
 		/>
 	</T.OrthographicCamera>
