@@ -7,16 +7,10 @@
 
 	let { blocks = [] } = $props<{ blocks?: BlockPoints[] }>();
 
-	const initialPosition: [number, number, number] = [0, 0, 10];
-	const initialZoom = 100;
-	const minZoom = 0.000001;
-	const maxZoom = 100000;
-
 	let camera = $state<three.OrthographicCamera | undefined>(undefined);
 	let controls: ComponentProps<typeof OrbitControls>['ref'] | undefined = $state(undefined);
 	let container = $state<HTMLDivElement | null>(null);
 	let viewport = $state({ width: 0, height: 0 });
-	let fitPending = $state(false);
 
 	const positions = $derived(toPosition(blocks));
 	const linePositions = $derived(toLinePositions(blocks));
@@ -31,12 +25,6 @@
 		const observer = new ResizeObserver(updateViewport);
 		observer.observe(element);
 		return () => observer.disconnect();
-	});
-
-	$effect(() => {
-		const currentBlocks = blocks;
-		if (currentBlocks.length === 0) return;
-		fitPending = true;
 	});
 
 	// compute bounds/center/zoom
@@ -71,14 +59,17 @@
 	});
 
 	$effect(() => {
-		if (!camera || !controls || !fit || !fitPending) return;
+		if (!camera || !controls || !fit) return;
 		controls.target.set(fit.centerX, fit.centerY, 0);
 		camera.position.set(fit.centerX, fit.centerY, camera.position.z);
+
+		const minZoom = 0.000001;
+		const maxZoom = 100000;
 		camera.zoom = three.MathUtils.clamp(fit.zoom, minZoom, maxZoom);
+
 		camera.updateProjectionMatrix();
 		controls.update();
 		controls.saveState();
-		fitPending = false;
 	});
 
 	export function reset() {
@@ -155,7 +146,7 @@
 
 <div class="h-full w-full" bind:this={container}>
 	<Canvas>
-		<T.OrthographicCamera makeDefault position={initialPosition} zoom={initialZoom} bind:ref={camera}>
+		<T.OrthographicCamera makeDefault position={[0, 0, 10]} zoom={100} bind:ref={camera}>
 			<OrbitControls
 				enableRotate={false}
 				enableDamping={false}
@@ -170,24 +161,23 @@
 		</T.OrthographicCamera>
 		<T.LineSegments>
 			<T.BufferGeometry>
-			<T.BufferAttribute
-				args={[linePositions, 3]}
-				attach={({ parent, ref }) => {
-					const geometry = parent as three.BufferGeometry;
-					geometry.setAttribute('position', ref);
-					ref.needsUpdate = true;
-					if (ref.count > 0) {
-						geometry.computeBoundingBox();
-						geometry.computeBoundingSphere();
-					} else {
-						geometry.boundingBox = null;
-						geometry.boundingSphere = null;
-					}
-				}}
-			/>
+				<T.BufferAttribute
+					args={[linePositions, 3]}
+					attach={({ parent, ref }) => {
+						const geometry = parent as three.BufferGeometry;
+						geometry.setAttribute('position', ref);
+						ref.needsUpdate = true;
+						if (ref.count > 0) {
+							geometry.computeBoundingBox();
+							geometry.computeBoundingSphere();
+						} else {
+							geometry.boundingBox = null;
+							geometry.boundingSphere = null;
+						}
+					}}
+				/>
 			</T.BufferGeometry>
 			<T.LineBasicMaterial color="#e2e8f0" transparent opacity={0.8} />
 		</T.LineSegments>
-		<!-- <T.AxesHelper args={[2]} /> -->
 	</Canvas>
 </div>
