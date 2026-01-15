@@ -16,6 +16,7 @@
 	let controls: ComponentProps<typeof OrbitControls>['ref'] | undefined = $state(undefined);
 
 	const positions = $derived(blocks.length ? toPosition(blocks) : new Float32Array());
+	const linePositions = $derived(blocks.length ? toLinePositions(blocks) : new Float32Array());
 
 	// compute bounds/center/zoom
 	const fit = $derived.by(() => {
@@ -83,6 +84,55 @@
 
 		return pos;
 	}
+
+	function toLinePositions(blocks: BlockPoints[]): Float32Array {
+		let totalSegments = 0;
+		for (const block of blocks) {
+			totalSegments += block.size.i * (block.size.j - 1);
+			totalSegments += (block.size.i - 1) * block.size.j;
+		}
+
+		const pos = new Float32Array(totalSegments * 2 * 3);
+		let offset = 0;
+
+		for (const block of blocks) {
+			const { size, values } = block;
+			const stride = 2;
+
+			const readPoint = (i: number, j: number) => {
+				const idx = stride * (j + size.j * i);
+				return { x: values[idx], y: values[idx + 1] };
+			};
+
+			for (let i = 0; i < size.i; i += 1) {
+				for (let j = 0; j < size.j - 1; j += 1) {
+					const a = readPoint(i, j);
+					const b = readPoint(i, j + 1);
+					pos[offset++] = a.x;
+					pos[offset++] = a.y;
+					pos[offset++] = 0;
+					pos[offset++] = b.x;
+					pos[offset++] = b.y;
+					pos[offset++] = 0;
+				}
+			}
+
+			for (let i = 0; i < size.i - 1; i += 1) {
+				for (let j = 0; j < size.j; j += 1) {
+					const a = readPoint(i, j);
+					const b = readPoint(i + 1, j);
+					pos[offset++] = a.x;
+					pos[offset++] = a.y;
+					pos[offset++] = 0;
+					pos[offset++] = b.x;
+					pos[offset++] = b.y;
+					pos[offset++] = 0;
+				}
+			}
+		}
+
+		return pos;
+	}
 </script>
 
 <Canvas>
@@ -99,17 +149,16 @@
 			bind:ref={controls}
 		/>
 	</T.OrthographicCamera>
-	<T.Points>
+	<T.LineSegments>
 		<T.BufferGeometry>
 			<T.BufferAttribute
-				args={[positions, 3]}
+				args={[linePositions, 3]}
 				attach={({ parent, ref }) => {
 					(parent as three.BufferGeometry).setAttribute('position', ref);
 				}}
 			/>
 		</T.BufferGeometry>
-
-		<T.PointsMaterial size={10} />
-	</T.Points>
-	<T.AxesHelper args={[2]} />
+		<T.LineBasicMaterial color="#e2e8f0" transparent opacity={0.8} />
+	</T.LineSegments>
+	<!-- <T.AxesHelper args={[2]} /> -->
 </Canvas>
