@@ -5,23 +5,45 @@
 	import * as three from 'three';
 	import type { BlockPoints } from '$lib/turbomesh';
 
-	const { blocks = [] } = $props<{ blocks?: BlockPoints[] }>();
+	let { blocks = [] } = $props<{ blocks?: BlockPoints[] }>();
 
 	const initialPosition: [number, number, number] = [0, 0, 10];
 	const initialZoom = 100;
-	const minZoom = 5;
-	const maxZoom = 500;
+	const minZoom = 0.000001;
+	const maxZoom = 100000;
 
 	let camera = $state<three.OrthographicCamera | undefined>(undefined);
 	let controls: ComponentProps<typeof OrbitControls>['ref'] | undefined = $state(undefined);
+	let container = $state<HTMLDivElement | null>(null);
+	let viewport = $state({ width: 0, height: 0 });
+	let fitPending = $state(false);
 
-	const positions = $derived(blocks.length ? toPosition(blocks) : new Float32Array());
-	const linePositions = $derived(blocks.length ? toLinePositions(blocks) : new Float32Array());
+	const positions = $derived(toPosition(blocks));
+	const linePositions = $derived(toLinePositions(blocks));
+
+	$effect(() => {
+		const element = container;
+		if (!element || typeof ResizeObserver === 'undefined') return;
+		const updateViewport = () => {
+			viewport = { width: element.clientWidth, height: element.clientHeight };
+		};
+		updateViewport();
+		const observer = new ResizeObserver(updateViewport);
+		observer.observe(element);
+		return () => observer.disconnect();
+	});
+
+	$effect(() => {
+		const currentBlocks = blocks;
+		if (currentBlocks.length === 0) return;
+		fitPending = true;
+	});
 
 	// compute bounds/center/zoom
 	const fit = $derived.by(() => {
 		if (!camera || positions.length < 3) return null;
-		const cam = camera;
+		const { width: viewWidth, height: viewHeight } = viewport;
+		if (viewWidth <= 0 || viewHeight <= 0) return null;
 		let minX = positions[0],
 			maxX = positions[0];
 		let minY = positions[1],
@@ -41,9 +63,7 @@
 
 		const width = Math.max(maxX - minX, 1e-6);
 		const height = Math.max(maxY - minY, 1e-6);
-		const viewWidth = cam.right - cam.left;
-		const viewHeight = cam.top - cam.bottom;
-		const padding = 1.1;
+		const padding = 1.02;
 
 		const zoom = Math.min(viewWidth / (width * padding), viewHeight / (height * padding));
 
@@ -51,20 +71,18 @@
 	});
 
 	$effect(() => {
-		if (!camera || !controls || !fit) return;
+		if (!camera || !controls || !fit || !fitPending) return;
 		controls.target.set(fit.centerX, fit.centerY, 0);
 		camera.position.set(fit.centerX, fit.centerY, camera.position.z);
 		camera.zoom = three.MathUtils.clamp(fit.zoom, minZoom, maxZoom);
 		camera.updateProjectionMatrix();
 		controls.update();
+		controls.saveState();
+		fitPending = false;
 	});
 
 	export function reset() {
-		if (!camera || !controls) return;
-		console.log('Resetting camera position');
-		camera.position.set(...initialPosition);
-		camera.zoom = initialZoom;
-		camera.updateProjectionMatrix();
+		if (!controls) return;
 		controls.reset();
 	}
 
@@ -135,30 +153,41 @@
 	}
 </script>
 
-<Canvas>
-	<T.OrthographicCamera makeDefault position={initialPosition} zoom={initialZoom} bind:ref={camera}>
-		<OrbitControls
-			enableRotate={false}
-			enableDamping={false}
-			zoomToCursor={true}
-			mouseButtons={{
-				LEFT: three.MOUSE.PAN,
-				MIDDLE: three.MOUSE.DOLLY,
-				RIGHT: three.MOUSE.PAN
-			}}
-			bind:ref={controls}
-		/>
-	</T.OrthographicCamera>
-	<T.LineSegments>
-		<T.BufferGeometry>
+<div class="h-full w-full" bind:this={container}>
+	<Canvas>
+		<T.OrthographicCamera makeDefault position={initialPosition} zoom={initialZoom} bind:ref={camera}>
+			<OrbitControls
+				enableRotate={false}
+				enableDamping={false}
+				zoomToCursor={true}
+				mouseButtons={{
+					LEFT: three.MOUSE.PAN,
+					MIDDLE: three.MOUSE.DOLLY,
+					RIGHT: three.MOUSE.PAN
+				}}
+				bind:ref={controls}
+			/>
+		</T.OrthographicCamera>
+		<T.LineSegments>
+			<T.BufferGeometry>
 			<T.BufferAttribute
 				args={[linePositions, 3]}
 				attach={({ parent, ref }) => {
-					(parent as three.BufferGeometry).setAttribute('position', ref);
+					const geometry = parent as three.BufferGeometry;
+					geometry.setAttribute('position', ref);
+					ref.needsUpdate = true;
+					if (ref.count > 0) {
+						geometry.computeBoundingBox();
+						geometry.computeBoundingSphere();
+					} else {
+						geometry.boundingBox = null;
+						geometry.boundingSphere = null;
+					}
 				}}
 			/>
-		</T.BufferGeometry>
-		<T.LineBasicMaterial color="#e2e8f0" transparent opacity={0.8} />
-	</T.LineSegments>
-	<!-- <T.AxesHelper args={[2]} /> -->
-</Canvas>
+			</T.BufferGeometry>
+			<T.LineBasicMaterial color="#e2e8f0" transparent opacity={0.8} />
+		</T.LineSegments>
+		<!-- <T.AxesHelper args={[2]} /> -->
+	</Canvas>
+</div>
