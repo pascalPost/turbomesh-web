@@ -49,6 +49,10 @@
 			console.error('Failed to load initial template', error);
 		}
 	}
+
+	export function getValue() {
+		return editor?.getValue() ?? '';
+	}
 </script>
 
 <div class="container" bind:this={container} aria-label="Code Editor"></div>

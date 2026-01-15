@@ -2,7 +2,7 @@
 import { TurboMeshSDK, type BlockPoints } from '$lib/turbomesh';
 
 type InitMessage = { type: 'init'; wasmUrl: string };
-type RunMessage = { type: 'run' };
+type RunMessage = { type: 'run'; input: string };
 type DisposeMessage = { type: 'dispose' };
 type WorkerMessage = InitMessage | RunMessage | DisposeMessage;
 
@@ -33,13 +33,20 @@ async function init(wasmUrl: string) {
 	}
 }
 
-function run() {
+function run(input: string) {
 	if (!sdk) {
 		postMessage({ type: 'error', message: 'Worker not initialized.' });
 		return;
 	}
 
-	sdk.run();
+	try {
+		sdk.run(input);
+	} catch (error) {
+		const message = error instanceof Error ? error.message : String(error);
+		postMessage({ type: 'error', message });
+		return;
+	}
+
 	const count = sdk.blocksCount();
 	const blocks: BlockPoints[] = [];
 	const transfer: Transferable[] = [];
@@ -65,7 +72,7 @@ ctx.addEventListener('message', (event: MessageEvent<WorkerMessage>) => {
 		return;
 	}
 	if (data.type === 'run') {
-		run();
+		run(data.input);
 		return;
 	}
 	if (data.type === 'dispose') {

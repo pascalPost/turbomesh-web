@@ -42,8 +42,13 @@
 			appendLog('TurboMesh worker not ready yet.');
 			return;
 		}
+		const input = monacoEditor?.getValue() ?? '';
+		if (input.length === 0) {
+			appendLog('Editor input is empty. Please provide a valid config.');
+			return;
+		}
 		appendLog('Running turbomesh...');
-		worker.postMessage({ type: 'run' });
+		worker.postMessage({ type: 'run', input });
 	}
 
 	function appendLog(message: string) {
