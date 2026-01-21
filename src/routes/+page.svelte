@@ -1,5 +1,6 @@
 <script lang="ts">
 	import * as Resizable from '$lib/components/ui/resizable/index.js';
+	import { Checkbox } from '$lib/components/ui/checkbox/index.js';
 	import Button from '$lib/components/ui/button/button.svelte';
 	import SiteHeader from '$lib/components/site-header.svelte';
 	import Play from '@lucide/svelte/icons/play';
@@ -78,14 +79,12 @@
 		appendLog(`Rendered profile points (down: ${profile.down.length}, up: ${profile.up.length}).`);
 	}
 
-	function handleRenderGridToggle(event: Event) {
-		const target = event.currentTarget as HTMLInputElement;
-		renderGridEnabled = target.checked;
+	function handleRenderGridToggle(checked: boolean) {
+		renderGridEnabled = checked;
 	}
 
-	function handleRenderProfileToggle(event: Event) {
-		const target = event.currentTarget as HTMLInputElement;
-		renderProfileEnabled = target.checked;
+	function handleRenderProfileToggle(checked: boolean) {
+		renderProfileEnabled = checked;
 		if (renderProfileEnabled) {
 			renderProfile();
 		}
@@ -188,20 +187,13 @@
 						</div>
 						<div class="mr-1 flex items-center justify-end gap-3">
 							<label class="flex items-center gap-2 text-sm">
-								<input
-									type="checkbox"
-									class="h-4 w-4 accent-primary"
-									checked={renderGridEnabled}
-									onchange={handleRenderGridToggle}
-								/>
+								<Checkbox checked={renderGridEnabled} onCheckedChange={handleRenderGridToggle} />
 								<span>Render Grid</span>
 							</label>
 							<label class="flex items-center gap-2 text-sm">
-								<input
-									type="checkbox"
-									class="h-4 w-4 accent-primary"
+								<Checkbox
 									checked={renderProfileEnabled}
-									onchange={handleRenderProfileToggle}
+									onCheckedChange={handleRenderProfileToggle}
 								/>
 								<span>Render Profile</span>
 							</label>
