@@ -14,6 +14,8 @@
 	let monacoEditor: MonacoEditor | null = $state(null);
 
 	let blockPoints = $state<BlockPoints[]>([]);
+	type ProfilePoints = { up: [number, number][]; down: [number, number][] };
+	let profilePoints = $state<ProfilePoints>({ up: [], down: [] });
 	let logEntries = $state<string[]>([]);
 	let workerReady = $state(false);
 	let worker: Worker | null = null;
@@ -47,8 +49,33 @@
 			appendLog('Editor input is empty. Please provide a valid config.');
 			return;
 		}
+		const profile = readProfilePoints(input);
+		if (!profile) {
+			appendLog('Failed to parse geometry.profile.data for render points.');
+			profilePoints = { up: [], down: [] };
+		} else {
+			profilePoints = profile;
+		}
 		appendLog('Running turbomesh...');
 		worker.postMessage({ type: 'run', input });
+	}
+
+	function renderProfile() {
+		const input = monacoEditor?.getValue() ?? '';
+		if (input.length === 0) {
+			appendLog('Editor input is empty. Please provide a valid config.');
+			return;
+		}
+		const profile = readProfilePoints(input);
+		if (!profile) {
+			appendLog('Failed to parse geometry.profile.data for render points.');
+			profilePoints = { up: [], down: [] };
+			return;
+		}
+		profilePoints = profile;
+		appendLog(
+			`Rendered profile points (down: ${profile.down.length}, up: ${profile.up.length}).`
+		);
 	}
 
 	function appendLog(message: string) {
@@ -87,6 +114,37 @@
 		}
 	}
 
+	function toPointPairs(value: unknown): [number, number][] {
+		if (!Array.isArray(value)) return [];
+		const points: [number, number][] = [];
+		for (const entry of value) {
+			if (!Array.isArray(entry) || entry.length < 2) continue;
+			const [x, y] = entry;
+			if (typeof x !== 'number' || !Number.isFinite(x)) continue;
+			if (typeof y !== 'number' || !Number.isFinite(y)) continue;
+			points.push([x, y]);
+		}
+		return points;
+	}
+
+	function readProfilePoints(input: string): ProfilePoints | null {
+		try {
+			const parsed = JSON.parse(input) as {
+				geometry?: { profile?: { data?: { down?: unknown; up?: unknown } } };
+			};
+			const data = parsed?.geometry?.profile?.data;
+			if (!data) {
+				return { down: [], up: [] };
+			}
+			return {
+				down: toPointPairs(data.down),
+				up: toPointPairs(data.up)
+			};
+		} catch {
+			return null;
+		}
+	}
+
 	let renderView: RenderView;
 </script>
 
@@ -98,6 +156,7 @@
 				<MonacoEditor bind:this={monacoEditor} />
 				<div class="flex flex-wrap gap-2">
 					<Button class="min-w-48 flex-1" onclick={generateGrid}><Play />Generate Grid</Button>
+					<Button class="min-w-48 flex-1" onclick={renderProfile}>Render Profile</Button>
 					<Button class="min-w-48 flex-1" onclick={monacoEditor?.reset}><RotateCcw />Reset</Button>
 				</div>
 			</div>
@@ -108,7 +167,7 @@
 				<Resizable.Pane defaultSize={75} minSize={30}>
 					<div class="flex h-full min-h-0 flex-col gap-1">
 						<div class="flex-1 min-h-0">
-							<RenderView bind:this={renderView} blocks={blockPoints} />
+							<RenderView bind:this={renderView} blocks={blockPoints} profilePoints={profilePoints} />
 						</div>
 						<Button
 							class="mr-1 self-end"

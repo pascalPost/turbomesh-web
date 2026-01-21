@@ -5,15 +5,25 @@
 	import * as three from 'three';
 	import type { BlockPoints } from '$lib/turbomesh';
 
-	let { blocks = [] } = $props<{ blocks?: BlockPoints[] }>();
+	type ProfilePoints = { up: [number, number][]; down: [number, number][] };
+
+	let {
+		blocks = [],
+		profilePoints = { up: [], down: [] }
+	} = $props<{ blocks?: BlockPoints[]; profilePoints?: ProfilePoints }>();
 
 	let camera = $state<three.OrthographicCamera | undefined>(undefined);
 	let controls: ComponentProps<typeof OrbitControls>['ref'] | undefined = $state(undefined);
 	let container = $state<HTMLDivElement | null>(null);
 	let viewport = $state({ width: 0, height: 0 });
 
-	const positions = $derived(toPosition(blocks));
+	const blockPositions = $derived(toPosition(blocks));
 	const linePositions = $derived(toLinePositions(blocks));
+	const profileDownPositions = $derived(toProfilePositions(profilePoints.down));
+	const profileUpPositions = $derived(toProfilePositions(profilePoints.up));
+	const fitPositions = $derived(
+		mergePositions(blockPositions, profileDownPositions, profileUpPositions)
+	);
 
 	$effect(() => {
 		const element = container;
@@ -29,17 +39,17 @@
 
 	// compute bounds/center/zoom
 	const fit = $derived.by(() => {
-		if (!camera || positions.length < 3) return null;
+		if (!camera || fitPositions.length < 3) return null;
 		const { width: viewWidth, height: viewHeight } = viewport;
 		if (viewWidth <= 0 || viewHeight <= 0) return null;
-		let minX = positions[0],
-			maxX = positions[0];
-		let minY = positions[1],
-			maxY = positions[1];
+		let minX = fitPositions[0],
+			maxX = fitPositions[0];
+		let minY = fitPositions[1],
+			maxY = fitPositions[1];
 
-		for (let i = 0; i < positions.length; i += 3) {
-			const x = positions[i];
-			const y = positions[i + 1];
+		for (let i = 0; i < fitPositions.length; i += 3) {
+			const x = fitPositions[i];
+			const y = fitPositions[i + 1];
 			if (x < minX) minX = x;
 			if (x > maxX) maxX = x;
 			if (y < minY) minY = y;
@@ -94,6 +104,17 @@
 		return pos;
 	}
 
+	function toProfilePositions(points: [number, number][]): Float32Array {
+		const pos = new Float32Array(points.length * 3);
+		let offset = 0;
+		for (const [x, y] of points) {
+			pos[offset++] = x;
+			pos[offset++] = y;
+			pos[offset++] = 0;
+		}
+		return pos;
+	}
+
 	function toLinePositions(blocks: BlockPoints[]): Float32Array {
 		let totalSegments = 0;
 		for (const block of blocks) {
@@ -142,6 +163,31 @@
 
 		return pos;
 	}
+
+	function mergePositions(...arrays: Float32Array[]): Float32Array {
+		const total = arrays.reduce((sum, arr) => sum + arr.length, 0);
+		if (total === 0) return new Float32Array();
+		const merged = new Float32Array(total);
+		let offset = 0;
+		for (const arr of arrays) {
+			merged.set(arr, offset);
+			offset += arr.length;
+		}
+		return merged;
+	}
+
+	const attachPosition = ({ parent, ref }: { parent: three.BufferGeometry; ref: three.BufferAttribute }) => {
+		const geometry = parent as three.BufferGeometry;
+		geometry.setAttribute('position', ref);
+		ref.needsUpdate = true;
+		if (ref.count > 0) {
+			geometry.computeBoundingBox();
+			geometry.computeBoundingSphere();
+		} else {
+			geometry.boundingBox = null;
+			geometry.boundingSphere = null;
+		}
+	};
 </script>
 
 <div class="h-full w-full" bind:this={container}>
@@ -161,23 +207,33 @@
 		</T.OrthographicCamera>
 		<T.LineSegments>
 			<T.BufferGeometry>
-				<T.BufferAttribute
-					args={[linePositions, 3]}
-					attach={({ parent, ref }) => {
-						const geometry = parent as three.BufferGeometry;
-						geometry.setAttribute('position', ref);
-						ref.needsUpdate = true;
-						if (ref.count > 0) {
-							geometry.computeBoundingBox();
-							geometry.computeBoundingSphere();
-						} else {
-							geometry.boundingBox = null;
-							geometry.boundingSphere = null;
-						}
-					}}
-				/>
+				<T.BufferAttribute args={[linePositions, 3]} attach={attachPosition} />
 			</T.BufferGeometry>
 			<T.LineBasicMaterial color="#e2e8f0" transparent opacity={0.8} />
 		</T.LineSegments>
+		<T.Points renderOrder={1}>
+			<T.BufferGeometry>
+				<T.BufferAttribute args={[profileDownPositions, 3]} attach={attachPosition} />
+			</T.BufferGeometry>
+			<T.PointsMaterial
+				color="#f97316"
+				size={4}
+				sizeAttenuation={false}
+				depthTest={false}
+				depthWrite={false}
+			/>
+		</T.Points>
+		<T.Points renderOrder={2}>
+			<T.BufferGeometry>
+				<T.BufferAttribute args={[profileUpPositions, 3]} attach={attachPosition} />
+			</T.BufferGeometry>
+			<T.PointsMaterial
+				color="#38bdf8"
+				size={4}
+				sizeAttenuation={false}
+				depthTest={false}
+				depthWrite={false}
+			/>
+		</T.Points>
 	</Canvas>
 </div>
