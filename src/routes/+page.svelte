@@ -1,8 +1,11 @@
 <script lang="ts">
 	import * as Resizable from '$lib/components/ui/resizable/index.js';
 	import { Checkbox } from '$lib/components/ui/checkbox/index.js';
+	import * as Sheet from '$lib/components/ui/sheet/index.js';
 	import Button from '$lib/components/ui/button/button.svelte';
+	import { Separator } from '$lib/components/ui/separator/index.js';
 	import SiteHeader from '$lib/components/site-header.svelte';
+	import BookOpen from '@lucide/svelte/icons/book-open';
 	import Play from '@lucide/svelte/icons/play';
 	import type { BlockPoints } from '$lib/turbomesh';
 	import TurboMeshWorker from '$lib/workers/turbomesh-worker.ts?worker';
@@ -23,12 +26,32 @@
 	let workerReady = $state(false);
 	let worker: Worker | null = null;
 	let logPane: HTMLDivElement | null = $state(null);
+	let examplesOpen = $state(false);
 
 	type WorkerMessage =
 		| { type: 'ready' }
 		| { type: 'log'; message: string }
 		| { type: 'result'; blocks: BlockPoints[] }
 		| { type: 'error'; message: string };
+
+	type ExampleEntry = {
+		id: string;
+		label: string;
+		url: string;
+	};
+
+	const examples: ExampleEntry[] = [
+		{
+			id: 't106',
+			label: 'T106',
+			url: '/T106.json'
+		},
+		{
+			id: 'ls89',
+			label: 'LS89',
+			url: '/LS89.json'
+		}
+	];
 
 	onMount(async () => {
 		worker = new TurboMeshWorker();
@@ -77,6 +100,10 @@
 		}
 		profilePoints = profile;
 		appendLog(`Rendered profile points (down: ${profile.down.length}, up: ${profile.up.length}).`);
+	}
+
+	function handleEditorLoaded() {
+		renderProfile();
 	}
 
 	function handleRenderGridToggle(checked: boolean) {
@@ -157,18 +184,64 @@
 		}
 	}
 
+	async function loadExample(example: ExampleEntry) {
+		if (!monacoEditor) {
+			appendLog('Editor is not ready yet.');
+			return;
+		}
+		const ok = await monacoEditor.loadFromUrl(example.url);
+		if (!ok) {
+			appendLog(`Failed to load example: ${example.label}.`);
+			return;
+		}
+		examplesOpen = false;
+		appendLog(`Loaded example: ${example.label}.`);
+		renderProfile();
+	}
+
 	let renderView: RenderView;
 </script>
 
 <div class="flex h-screen flex-col pb-1 [--header-height:calc(--spacing(14))]">
-	<SiteHeader />
+	<SiteHeader>
+		<div slot="actions">
+			<Button class="gap-2" variant="outline" onclick={() => (examplesOpen = true)}>
+				<BookOpen />
+				Examples
+			</Button>
+		</div>
+	</SiteHeader>
+	<Sheet.Root bind:open={examplesOpen}>
+		<Sheet.Content side="right" class="w-full sm:max-w-md">
+			<Sheet.Header>
+				<Sheet.Title>Load an example</Sheet.Title>
+				<Sheet.Description>Select a sample config for the editor.</Sheet.Description>
+			</Sheet.Header>
+			<div class="flex flex-col gap-2">
+				{#each examples as example (example.id)}
+					<Button
+						variant="outline"
+						class="h-auto items-start justify-between gap-3 py-3 text-left"
+						onclick={() => loadExample(example)}
+					>
+						<div class="flex flex-col">
+							<span class="font-medium">{example.label}</span>
+						</div>
+					</Button>
+				{/each}
+			</div>
+			<Separator class="my-3" />
+			<div class="text-xs text-muted-foreground">
+				Loading an example replaces the current editor content.
+			</div>
+		</Sheet.Content>
+	</Sheet.Root>
 	<Resizable.PaneGroup direction="horizontal">
 		<Resizable.Pane>
 			<div class="flex h-full flex-col gap-2">
-				<MonacoEditor bind:this={monacoEditor} />
+				<MonacoEditor bind:this={monacoEditor} on:loaded={handleEditorLoaded} />
 				<div class="flex flex-wrap gap-2">
 					<Button class="min-w-48 flex-1" onclick={generateGrid}><Play />Generate Grid</Button>
-					<Button class="min-w-48 flex-1" onclick={monacoEditor?.reset}><RotateCcw />Reset</Button>
 				</div>
 			</div>
 		</Resizable.Pane>

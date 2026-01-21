@@ -1,12 +1,13 @@
 <script lang="ts">
 	import loader from '@monaco-editor/loader';
-	import { onMount, onDestroy } from 'svelte';
+	import { createEventDispatcher, onMount, onDestroy } from 'svelte';
 	import type * as Monaco from 'monaco-editor/esm/vs/editor/editor.api.d.ts';
 	import { mode } from 'mode-watcher';
 
 	let editor: Monaco.editor.IStandaloneCodeEditor | undefined;
 	let monaco: typeof Monaco | undefined;
 	let container: HTMLElement;
+	const dispatch = createEventDispatcher<{ loaded: void }>();
 
 	onMount(async () => {
 		const monacoEditor = await import('monaco-editor');
@@ -26,6 +27,7 @@
 		});
 
 		await loadInitialExample();
+		dispatch('loaded');
 	});
 
 	$effect(() => {
