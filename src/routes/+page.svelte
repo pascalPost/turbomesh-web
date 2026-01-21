@@ -240,9 +240,6 @@
 		<Resizable.Pane>
 			<div class="flex h-full flex-col gap-2">
 				<MonacoEditor bind:this={monacoEditor} on:loaded={handleEditorLoaded} />
-				<div class="flex flex-wrap gap-2">
-					<Button class="min-w-48 flex-1" onclick={generateGrid}><Play />Generate Grid</Button>
-				</div>
 			</div>
 		</Resizable.Pane>
 		<Resizable.Handle withHandle />
@@ -258,26 +255,29 @@
 								renderGrid={renderGridEnabled}
 							/>
 						</div>
-						<div class="mr-1 flex items-center justify-end gap-3">
-							<label class="flex items-center gap-2 text-sm">
-								<Checkbox checked={renderGridEnabled} onCheckedChange={handleRenderGridToggle} />
-								<span>Render Grid</span>
-							</label>
-							<label class="flex items-center gap-2 text-sm">
-								<Checkbox
-									checked={renderProfileEnabled}
-									onCheckedChange={handleRenderProfileToggle}
-								/>
-								<span>Render Profile</span>
-							</label>
-							<Button
-								onclick={() => {
-									renderView.reset();
-									appendLog('Reset view.');
-								}}
-							>
-								<RotateCcw /> Reset View
-							</Button>
+						<div class="mr-1 flex items-center justify-between gap-3">
+							<Button class="min-w-48" onclick={generateGrid}><Play />Generate Grid</Button>
+							<div class="flex items-center gap-3">
+								<label class="flex items-center gap-2 text-sm">
+									<Checkbox checked={renderGridEnabled} onCheckedChange={handleRenderGridToggle} />
+									<span>Render Grid</span>
+								</label>
+								<label class="flex items-center gap-2 text-sm">
+									<Checkbox
+										checked={renderProfileEnabled}
+										onCheckedChange={handleRenderProfileToggle}
+									/>
+									<span>Render Profile</span>
+								</label>
+								<Button
+									onclick={() => {
+										renderView.reset();
+										appendLog('Reset view.');
+									}}
+								>
+									<RotateCcw /> Reset View
+								</Button>
+							</div>
 						</div>
 						<div class="flex h-10 items-center justify-end border-t pr-2">
 							<div>
