@@ -25,7 +25,7 @@
 			fontFamily: 'Geist Mono'
 		});
 
-		await reset();
+		await loadInitialExample();
 	});
 
 	$effect(() => {
@@ -38,16 +38,21 @@
 		editor?.dispose();
 	});
 
-	export async function reset() {
+	export async function loadFromUrl(url: string): Promise<boolean> {
 		try {
-			const response = await fetch('/T106.json');
-			if (!response.ok) throw new Error(`Failed to load T106.json (${response.status})`);
-
+			const response = await fetch(url);
+			if (!response.ok) throw new Error(`Failed to load ${url} (${response.status})`);
 			const text = await response.text();
 			editor?.setValue(text);
+			return true;
 		} catch (error) {
-			console.error('Failed to load initial template', error);
+			console.error('Failed to load example', error);
+			return false;
 		}
+	}
+
+	export async function loadInitialExample() {
+		await loadFromUrl('/T106.json');
 	}
 
 	export function getValue() {

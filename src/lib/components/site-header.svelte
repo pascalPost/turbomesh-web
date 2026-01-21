@@ -8,7 +8,8 @@
 <header class="sticky top-0 z-50 flex w-full items-center border-b">
 	<div class="flex h-(--header-height) w-full items-center gap-2 px-4">
 		TurboMesh
-		<div class="ml-auto">
+		<div class="ml-auto flex items-center gap-2">
+			<slot name="actions" />
 			<Button onclick={toggleMode} variant="outline" size="icon">
 				<SunIcon
 					class="h-[1.2rem] w-[1.2rem] scale-100 rotate-0 transition-all! dark:scale-0 dark:-rotate-90"
