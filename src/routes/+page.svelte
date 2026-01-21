@@ -16,6 +16,7 @@
 	let blockPoints = $state<BlockPoints[]>([]);
 	type ProfilePoints = { up: [number, number][]; down: [number, number][] };
 	let profilePoints = $state<ProfilePoints>({ up: [], down: [] });
+	let renderProfileEnabled = $state(true);
 	let logEntries = $state<string[]>([]);
 	let workerReady = $state(false);
 	let worker: Worker | null = null;
@@ -73,9 +74,15 @@
 			return;
 		}
 		profilePoints = profile;
-		appendLog(
-			`Rendered profile points (down: ${profile.down.length}, up: ${profile.up.length}).`
-		);
+		appendLog(`Rendered profile points (down: ${profile.down.length}, up: ${profile.up.length}).`);
+	}
+
+	function handleRenderProfileToggle(event: Event) {
+		const target = event.currentTarget as HTMLInputElement;
+		renderProfileEnabled = target.checked;
+		if (renderProfileEnabled) {
+			renderProfile();
+		}
 	}
 
 	function appendLog(message: string) {
@@ -156,7 +163,6 @@
 				<MonacoEditor bind:this={monacoEditor} />
 				<div class="flex flex-wrap gap-2">
 					<Button class="min-w-48 flex-1" onclick={generateGrid}><Play />Generate Grid</Button>
-					<Button class="min-w-48 flex-1" onclick={renderProfile}>Render Profile</Button>
 					<Button class="min-w-48 flex-1" onclick={monacoEditor?.reset}><RotateCcw />Reset</Button>
 				</div>
 			</div>
@@ -166,18 +172,32 @@
 			<Resizable.PaneGroup direction="vertical">
 				<Resizable.Pane defaultSize={75} minSize={30}>
 					<div class="flex h-full min-h-0 flex-col gap-1">
-						<div class="flex-1 min-h-0">
-							<RenderView bind:this={renderView} blocks={blockPoints} profilePoints={profilePoints} />
+						<div class="min-h-0 flex-1">
+							<RenderView
+								bind:this={renderView}
+								blocks={blockPoints}
+								profilePoints={renderProfileEnabled ? profilePoints : { up: [], down: [] }}
+							/>
 						</div>
-						<Button
-							class="mr-1 self-end"
-							onclick={() => {
-								renderView.reset();
-								appendLog('Reset view.');
-							}}
-						>
-							<RotateCcw /> Reset View
-						</Button>
+						<div class="mr-1 flex items-center justify-end gap-3">
+							<label class="flex items-center gap-2 text-sm">
+								<input
+									type="checkbox"
+									class="h-4 w-4 accent-primary"
+									checked={renderProfileEnabled}
+									onchange={handleRenderProfileToggle}
+								/>
+								<span>Render Profile</span>
+							</label>
+							<Button
+								onclick={() => {
+									renderView.reset();
+									appendLog('Reset view.');
+								}}
+							>
+								<RotateCcw /> Reset View
+							</Button>
+						</div>
 						<div class="flex h-10 items-center justify-end border-t pr-2">
 							<div>
 								blocks: {blockPoints.length}
@@ -189,13 +209,13 @@
 				<Resizable.Pane defaultSize={25} minSize={10}>
 					<div class="flex h-full min-h-0 flex-col">
 						<div
-							class="flex items-center justify-between border-b px-2 py-1 text-xs uppercase tracking-wide text-muted-foreground"
+							class="flex items-center justify-between border-b px-2 py-1 text-xs tracking-wide text-muted-foreground uppercase"
 						>
 							<span>Log</span>
 							<span>{logEntries.length}</span>
 						</div>
 						<div
-							class="flex-1 min-h-0 overflow-auto overflow-x-auto px-2 py-1 font-mono text-xs whitespace-pre"
+							class="min-h-0 flex-1 overflow-auto overflow-x-auto px-2 py-1 font-mono text-xs whitespace-pre"
 							bind:this={logPane}
 						>
 							{#if logEntries.length === 0}
