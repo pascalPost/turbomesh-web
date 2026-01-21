@@ -27,6 +27,19 @@
 	let worker: Worker | null = null;
 	let logPane: HTMLDivElement | null = $state(null);
 	let examplesOpen = $state(false);
+	const meshStats = $derived.by(() => {
+		let points = 0;
+		let cells = 0;
+		for (const block of blockPoints) {
+			const countI = block.size.i;
+			const countJ = block.size.j;
+			points += countI * countJ;
+			if (countI > 1 && countJ > 1) {
+				cells += (countI - 1) * (countJ - 1);
+			}
+		}
+		return { points, cells };
+	});
 
 	type WorkerMessage =
 		| { type: 'ready' }
@@ -280,8 +293,12 @@
 							</div>
 						</div>
 						<div class="flex h-10 items-center justify-end border-t pr-2">
-							<div>
-								blocks: {blockPoints.length}
+							<div class="flex items-center gap-2 text-sm">
+								<span>blocks: {blockPoints.length}</span>
+								<span class="text-muted-foreground">|</span>
+								<span>points: {meshStats.points}</span>
+								<span class="text-muted-foreground">|</span>
+								<span>cells: {meshStats.cells}</span>
 							</div>
 						</div>
 					</div>
