@@ -9,8 +9,9 @@
 
 	let {
 		blocks = [],
-		profilePoints = { up: [], down: [] }
-	} = $props<{ blocks?: BlockPoints[]; profilePoints?: ProfilePoints }>();
+		profilePoints = { up: [], down: [] },
+		renderGrid = true
+	} = $props<{ blocks?: BlockPoints[]; profilePoints?: ProfilePoints; renderGrid?: boolean }>();
 
 	let camera = $state<three.OrthographicCamera | undefined>(undefined);
 	let controls: ComponentProps<typeof OrbitControls>['ref'] | undefined = $state(undefined);
@@ -18,7 +19,7 @@
 	let viewport = $state({ width: 0, height: 0 });
 
 	const blockPositions = $derived(toPosition(blocks));
-	const linePositions = $derived(toLinePositions(blocks));
+	const linePositions = $derived(renderGrid ? toLinePositions(blocks) : new Float32Array());
 	const profileDownPositions = $derived(toProfilePositions(profilePoints.down));
 	const profileUpPositions = $derived(toProfilePositions(profilePoints.up));
 	const fitPositions = $derived(
@@ -205,12 +206,14 @@
 				bind:ref={controls}
 			/>
 		</T.OrthographicCamera>
-		<T.LineSegments>
-			<T.BufferGeometry>
-				<T.BufferAttribute args={[linePositions, 3]} attach={attachPosition} />
-			</T.BufferGeometry>
-			<T.LineBasicMaterial color="#e2e8f0" transparent opacity={0.8} />
-		</T.LineSegments>
+		{#if renderGrid}
+			<T.LineSegments>
+				<T.BufferGeometry>
+					<T.BufferAttribute args={[linePositions, 3]} attach={attachPosition} />
+				</T.BufferGeometry>
+				<T.LineBasicMaterial color="#e2e8f0" transparent opacity={0.8} />
+			</T.LineSegments>
+		{/if}
 		<T.Points renderOrder={1}>
 			<T.BufferGeometry>
 				<T.BufferAttribute args={[profileDownPositions, 3]} attach={attachPosition} />

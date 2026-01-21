@@ -17,6 +17,7 @@
 	type ProfilePoints = { up: [number, number][]; down: [number, number][] };
 	let profilePoints = $state<ProfilePoints>({ up: [], down: [] });
 	let renderProfileEnabled = $state(true);
+	let renderGridEnabled = $state(true);
 	let logEntries = $state<string[]>([]);
 	let workerReady = $state(false);
 	let worker: Worker | null = null;
@@ -75,6 +76,11 @@
 		}
 		profilePoints = profile;
 		appendLog(`Rendered profile points (down: ${profile.down.length}, up: ${profile.up.length}).`);
+	}
+
+	function handleRenderGridToggle(event: Event) {
+		const target = event.currentTarget as HTMLInputElement;
+		renderGridEnabled = target.checked;
 	}
 
 	function handleRenderProfileToggle(event: Event) {
@@ -177,9 +183,19 @@
 								bind:this={renderView}
 								blocks={blockPoints}
 								profilePoints={renderProfileEnabled ? profilePoints : { up: [], down: [] }}
+								renderGrid={renderGridEnabled}
 							/>
 						</div>
 						<div class="mr-1 flex items-center justify-end gap-3">
+							<label class="flex items-center gap-2 text-sm">
+								<input
+									type="checkbox"
+									class="h-4 w-4 accent-primary"
+									checked={renderGridEnabled}
+									onchange={handleRenderGridToggle}
+								/>
+								<span>Render Grid</span>
+							</label>
 							<label class="flex items-center gap-2 text-sm">
 								<input
 									type="checkbox"
