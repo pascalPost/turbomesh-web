@@ -25,7 +25,7 @@ jobs:
       - name: Build turbomesh
         working-directory: turbomesh
         run: |
-          zig build -Doptimize=ReleaseSmall
+          zig build -Dtarget=wasm32-freestanding -Doptimize=ReleaseSmall
           cp zig-out/bin/turbomesh.wasm "$GITHUB_WORKSPACE/static"
 
       - name: Copy turbomesh TS sdk
