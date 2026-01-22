@@ -57,12 +57,12 @@
 		{
 			id: 't106',
 			label: 'T106',
-			url: '/T106.json'
+			url: `${base}/T106.json`
 		},
 		{
 			id: 'ls89',
 			label: 'LS89',
-			url: '/LS89.json'
+			url: `${base}/LS89.json`
 		}
 	];
 
