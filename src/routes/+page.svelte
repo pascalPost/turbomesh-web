@@ -215,6 +215,7 @@
 			appendLog(`Failed to load example: ${example.label}.`);
 			return;
 		}
+		blockPoints = [];
 		examplesOpen = false;
 		appendLog(`Loaded example: ${example.label}.`);
 		renderProfile();
