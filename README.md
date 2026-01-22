@@ -42,3 +42,11 @@ npm run build
 You can preview the production build with `npm run preview`.
 
 > To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+
+## License
+
+This repository is licensed under the GNU Affero General Public License v3.0 (AGPL-3.0-or-later). See `LICENSE`.
+
+The turbomesh wasm library is sourced from https://github.com/pascalPost/turbomesh and is also licensed under AGPL-3.0-or-later. See `THIRD_PARTY_LICENSES.md`.
+
+The shadcn-svelte components under `src/lib/components/ui` are licensed under the MIT License. See `THIRD_PARTY_LICENSES.md`.
