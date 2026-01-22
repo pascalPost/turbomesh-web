@@ -179,18 +179,26 @@
 		return points;
 	}
 
+	function scalePointPairs(points: [number, number][], scale: number): [number, number][] {
+		if (scale === 1) return points;
+		return points.map(([x, y]) => [x * scale, y * scale]);
+	}
+
 	function readProfilePoints(input: string): ProfilePoints | null {
 		try {
 			const parsed = JSON.parse(input) as {
-				geometry?: { profile?: { data?: { down?: unknown; up?: unknown } } };
+				geometry?: { scale?: unknown; profile?: { data?: { down?: unknown; up?: unknown } } };
 			};
-			const data = parsed?.geometry?.profile?.data;
+			const geometry = parsed?.geometry;
+			const data = geometry?.profile?.data;
+			const scale =
+				typeof geometry?.scale === 'number' && Number.isFinite(geometry.scale) ? geometry.scale : 1;
 			if (!data) {
 				return { down: [], up: [] };
 			}
 			return {
-				down: toPointPairs(data.down),
-				up: toPointPairs(data.up)
+				down: scalePointPairs(toPointPairs(data.down), scale),
+				up: scalePointPairs(toPointPairs(data.up), scale)
 			};
 		} catch {
 			return null;
