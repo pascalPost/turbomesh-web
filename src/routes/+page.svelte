@@ -9,7 +9,7 @@
 	import Play from '@lucide/svelte/icons/play';
 	import type { BlockPoints } from '$lib/turbomesh';
 	import TurboMeshWorker from '$lib/workers/turbomesh-worker.ts?worker';
-	import { base } from '$app/paths';
+	import { asset } from '$app/paths';
 	import RotateCcw from '@lucide/svelte/icons/rotate-ccw';
 	import MonacoEditor from '$lib/components/monaco-editor.svelte';
 	import RenderView from '$lib/components/render-view.svelte';
@@ -57,19 +57,19 @@
 		{
 			id: 't106',
 			label: 'T106',
-			url: `${base}/T106.json`
+			url: asset('/T106.json')
 		},
 		{
 			id: 'ls89',
 			label: 'LS89',
-			url: `${base}/LS89.json`
+			url: asset('/LS89.json')
 		}
 	];
 
 	onMount(async () => {
 		worker = new TurboMeshWorker();
 		worker.addEventListener('message', handleWorkerMessage);
-		worker.postMessage({ type: 'init', wasmUrl: `${base}/turbomesh.wasm` });
+		worker.postMessage({ type: 'init', wasmUrl: asset('/turbomesh.wasm') });
 	});
 
 	onDestroy(() => {

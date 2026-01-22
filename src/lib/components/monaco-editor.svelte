@@ -1,7 +1,7 @@
 <script lang="ts">
 	import loader from '@monaco-editor/loader';
 	import { createEventDispatcher, onMount, onDestroy } from 'svelte';
-	import { base } from '$app/paths';
+	import { asset } from '$app/paths';
 	import type * as Monaco from 'monaco-editor/esm/vs/editor/editor.api.d.ts';
 	import { mode } from 'mode-watcher';
 
@@ -55,7 +55,7 @@
 	}
 
 	export async function loadInitialExample() {
-		await loadFromUrl(`${base}/T106.json`);
+		await loadFromUrl(asset('/T106.json'));
 	}
 
 	export function getValue() {
