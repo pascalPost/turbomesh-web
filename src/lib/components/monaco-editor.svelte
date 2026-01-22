@@ -1,5 +1,4 @@
 <script lang="ts">
-	import loader from '@monaco-editor/loader';
 	import { createEventDispatcher, onMount, onDestroy } from 'svelte';
 	import { asset } from '$app/paths';
 	import type * as Monaco from 'monaco-editor/esm/vs/editor/editor.api.d.ts';
@@ -11,11 +10,7 @@
 	const dispatch = createEventDispatcher<{ loaded: void }>();
 
 	onMount(async () => {
-		const monacoEditor = await import('monaco-editor');
-		loader.config({ monaco: monacoEditor.default });
-
-		monaco = await loader.init();
-
+		monaco = (await import('./../monaco')).default;
 		editor = monaco?.editor.create(container, {
 			value: '',
 			language: 'json',
